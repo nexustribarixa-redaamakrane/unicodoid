@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <RootNamespace>Unicodoid</RootNamespace>
+    <AssemblyName>Unicodoid</AssemblyName>
+    <Version>1.0.0</Version>
+    <Description>General-purpose SDK for designing, implementing, and managing independent Unicode-like encoding systems.</Description>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,55 @@
+[package]
+name = "unicodoid"
+version = "1.0.0"
+edition = "2024"
+rust-version = "1.85"
+description = "General-purpose SDK for designing, implementing, and managing independent Unicode-like encoding systems."
+publish = false
+keywords = ["unicode", "encoding", "codec", "text"]
+categories = ["encoding", "text-processing"]
+
+[dependencies]
+
+[lib]
+name = "unicodoid"
+path = "src/lib.rs"
+
+[[test]]
+name = "core"
+path = "tests/core.rs"
+
+[[test]]
+name = "unicode"
+path = "tests/unicode.rs"
+
+[[test]]
+name = "stateful"
+path = "tests/stateful.rs"
+
+[[test]]
+name = "conformance"
+path = "tests/conformance.rs"
+
+[[test]]
+name = "collation"
+path = "tests/collation.rs"
+
+[[test]]
+name = "uax34"
+path = "tests/uax34.rs"
+
+[[test]]
+name = "uts51"
+path = "tests/uts51.rs"
+
+[[test]]
+name = "uts58"
+path = "tests/uts58.rs"
+
+[[test]]
+name = "harness"
+path = "tests/harness.rs"
+
+[[test]]
+name = "utr59"
+path = "tests/utr59.rs"

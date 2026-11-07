@@ -1,0 +1,10 @@
+path = r"C:\Users\KARIMABENDA\Documents\unicodoid\clike\src\uts\uts10_collation.c"
+src = open(path, encoding="utf-8").read()
+src = src.replace("unicodoid_ucd_weight_value_t weights[16];", "unicodoid_ucd_weight_value_t weights[24];")
+src = src.replace("unicodoid_ucd_weight_value_t w[16];", "unicodoid_ucd_weight_value_t w[24];")
+src = src.replace("weights, 16);", "weights, 24);")
+src = src.replace("w, 16);", "w, 24);")
+src = src.replace("nfd->cps[i], weights, 16);", "nfd->cps[i], weights, 24);")
+src = src.replace("weights, 16);\n", "weights, 24);\n")
+open(path, "w", encoding="utf-8").write(src)
+print("done" if "weights[24]" in src else "FAILED")

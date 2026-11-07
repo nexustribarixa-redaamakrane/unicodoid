@@ -1,0 +1,56 @@
+# Build output (CMake / MSVC / GCC out-of-source builds)
+build/
+clike/build/
+clike/build-*/
+out/
+cmake-build-*/
+
+# C# build artifacts
+**/bin/
+**/obj/
+*.user
+*.suo
+
+# Rust build artifacts
+rust/target/
+**/target/
+
+# Compiler / linker intermediates (MSVC, GCC, MinGW)
+*.obj
+*.lib
+*.exe
+*.pdb
+*.tlog
+*.ilk
+*.recipe
+*.a
+*.so
+*.dll
+*.dylib
+
+# Editor / IDE / OS local state
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local tool caches
+local/
+*.cache
+TestResults/
+*.trx
+coverage/
+*.info
+
+# Downloaded Unicode data (re-downloadable via tools/gen_ucd.py; keep manifest)
+data/ucd/
+data/reports/
+!data/generated/
+data/generated/*.tmp
+
+# Misc local files
+*.log
+*.tmp
+*~
+*.swp
