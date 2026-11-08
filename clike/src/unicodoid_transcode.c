@@ -10,10 +10,13 @@ typedef struct byte_buffer {
 } byte_buffer_t;
 
 static unicodoid_status_t buffer_reserve(byte_buffer_t* buf, size_t extra) {
-    if (buf->length + extra <= buf->capacity) return UNICODOID_OK;
+    /* Check for size_t overflow before adding: length + extra could wrap. */
+    if (extra > SIZE_MAX - buf->length) return UNICODOID_ERR_OVERFLOW;
+    size_t needed = buf->length + extra;
+    if (needed <= buf->capacity) return UNICODOID_OK;
 
     size_t new_cap = buf->capacity ? buf->capacity : 64;
-    while (new_cap < buf->length + extra) {
+    while (new_cap < needed) {
         if (new_cap > (SIZE_MAX / 2)) return UNICODOID_ERR_OVERFLOW;
         new_cap *= 2;
     }

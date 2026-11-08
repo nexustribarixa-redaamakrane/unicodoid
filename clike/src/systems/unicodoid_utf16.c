@@ -132,6 +132,7 @@ static unicodoid_status_t utf16le_validate(
     const unicodoid_system_t* sys, void* state, const void* in, size_t len,
     size_t* invalid
 ) {
+    if (len > 0 && !in) return UNICODOID_ERR_INVALID_PARAM;
     size_t off = 0;
     while (off < len) {
         unicodoid_char64_t ch;
@@ -152,7 +153,9 @@ static unicodoid_status_t utf16le_char_count(
     const unicodoid_system_t* sys, void* state, const void* in, size_t len,
     size_t* out_count
 ) {
-    if (!in || !out_count) return UNICODOID_ERR_INVALID_PARAM;
+    if (!out_count) return UNICODOID_ERR_INVALID_PARAM;
+    if (!in && len > 0) return UNICODOID_ERR_INVALID_PARAM;
+    if (len == 0) { *out_count = 0; return UNICODOID_OK; }
     size_t count = 0, off = 0;
     while (off < len) {
         unicodoid_char64_t ch;
@@ -173,13 +176,16 @@ static unicodoid_status_t utf16_byte_count(
     size_t num_chars, size_t* out_bytes
 ) {
     (void)sys;
-    if (!chars || !out_bytes) return UNICODOID_ERR_INVALID_PARAM;
+    if (!out_bytes) return UNICODOID_ERR_INVALID_PARAM;
+    if (!chars && num_chars > 0) return UNICODOID_ERR_INVALID_PARAM;
     size_t total = 0;
     for (size_t i = 0; i < num_chars; ++i) {
         if (!unicodoid_is_valid_unicode_scalar((uint32_t)chars[i])) {
             return UNICODOID_ERR_UNMAPPABLE_CHAR;
         }
-        total += chars[i] <= 0xFFFF ? 2 : 4;
+        size_t need = chars[i] <= 0xFFFF ? 2 : 4;
+        if (need > SIZE_MAX - total) return UNICODOID_ERR_OVERFLOW;
+        total += need;
     }
     *out_bytes = total;
     return UNICODOID_OK;
@@ -205,6 +211,7 @@ static unicodoid_status_t utf16be_validate(
     const unicodoid_system_t* sys, void* state, const void* in, size_t len,
     size_t* invalid
 ) {
+    if (len > 0 && !in) return UNICODOID_ERR_INVALID_PARAM;
     size_t off = 0;
     while (off < len) {
         unicodoid_char64_t ch;
@@ -225,7 +232,9 @@ static unicodoid_status_t utf16be_char_count(
     const unicodoid_system_t* sys, void* state, const void* in, size_t len,
     size_t* out_count
 ) {
-    if (!in || !out_count) return UNICODOID_ERR_INVALID_PARAM;
+    if (!out_count) return UNICODOID_ERR_INVALID_PARAM;
+    if (!in && len > 0) return UNICODOID_ERR_INVALID_PARAM;
+    if (len == 0) { *out_count = 0; return UNICODOID_OK; }
     size_t count = 0, off = 0;
     while (off < len) {
         unicodoid_char64_t ch;

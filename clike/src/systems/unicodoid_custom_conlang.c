@@ -73,6 +73,7 @@ static unicodoid_status_t conlang_validate(
     size_t in_len,
     size_t* out_invalid_offset
 ) {
+    if (in_len > 0 && !in_buf) return UNICODOID_ERR_INVALID_PARAM;
     size_t off = 0;
     while (off < in_len) {
         unicodoid_char64_t ch;
@@ -94,7 +95,9 @@ static unicodoid_status_t conlang_char_count(
     size_t in_len,
     size_t* out_count
 ) {
-    if (!in_buf || !out_count) return UNICODOID_ERR_INVALID_PARAM;
+    if (!out_count) return UNICODOID_ERR_INVALID_PARAM;
+    if (!in_buf && in_len > 0) return UNICODOID_ERR_INVALID_PARAM;
+    if (in_len == 0) { *out_count = 0; return UNICODOID_OK; }
     size_t count = 0, off = 0;
     while (off < in_len) {
         unicodoid_char64_t ch;
@@ -115,13 +118,17 @@ static unicodoid_status_t conlang_byte_count(
     size_t* out_bytes
 ) {
     (void)sys;
-    if (!chars || !out_bytes) return UNICODOID_ERR_INVALID_PARAM;
+    if (!out_bytes) return UNICODOID_ERR_INVALID_PARAM;
+    if (!chars && num_chars > 0) return UNICODOID_ERR_INVALID_PARAM;
     size_t total = 0;
     for (size_t i = 0; i < num_chars; ++i) {
         unicodoid_char64_t ch = chars[i];
-        if (ch <= 0x7F) total += 1;
-        else if (ch <= 0x3FFF) total += 2;
+        size_t need;
+        if (ch <= 0x7F) need = 1;
+        else if (ch <= 0x3FFF) need = 2;
         else return UNICODOID_ERR_UNMAPPABLE_CHAR;
+        if (need > SIZE_MAX - total) return UNICODOID_ERR_OVERFLOW;
+        total += need;
     }
     *out_bytes = total;
     return UNICODOID_OK;

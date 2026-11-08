@@ -95,6 +95,7 @@ unicodoid_status_t unicodoid_codec_validate(
     size_t* out_invalid_offset
 ) {
     if (!codec || !codec->system) return UNICODOID_ERR_INVALID_PARAM;
+    if (in_len > 0 && !in) return UNICODOID_ERR_INVALID_PARAM;
 
     if (codec->system->ops.validate) {
         if (codec->state_size > 0 && !codec->state) return UNICODOID_ERR_STATE;
@@ -139,6 +140,7 @@ unicodoid_status_t unicodoid_codec_char_count(
     size_t* out_count
 ) {
     if (!codec || !codec->system || !out_count) return UNICODOID_ERR_INVALID_PARAM;
+    if (in_len > 0 && !in) return UNICODOID_ERR_INVALID_PARAM;
 
     if (codec->system->ops.char_count) {
         if (codec->state_size > 0 && !codec->state) return UNICODOID_ERR_STATE;
@@ -182,11 +184,23 @@ unicodoid_status_t unicodoid_codec_encode(
     if (out_cap > 0 && !out) return UNICODOID_ERR_INVALID_PARAM;
 
     *out_written = 0;
+    /* out may be NULL only when out_cap == 0 (checked above).  Pointer
+     * arithmetic on a NULL pointer is undefined behaviour in C even with
+     * offset zero, so when out is NULL pass a valid dummy pointer instead;
+     * encoders check out_cap before writing and will report
+     * UNICODOID_ERR_BUFFER_TOO_SMALL (or UNMAPPABLE_CHAR for an invalid
+     * value) without dereferencing it. */
+    uint8_t dummy_slot = 0;
     size_t off = 0;
     for (size_t i = 0; i < num_chars; ++i) {
+        if (off > out_cap) {
+            *out_written = off;
+            return UNICODOID_ERR_OVERFLOW;
+        }
+        void* dst = out ? (void*)((uint8_t*)out + off) : (void*)&dummy_slot;
         size_t written = 0;
         unicodoid_status_t st = unicodoid_codec_encode_char(
-            codec, chars[i], (uint8_t*)out + off, out_cap - off, &written
+            codec, chars[i], dst, out_cap - off, &written
         );
         if (st != UNICODOID_OK) {
             *out_written = off;

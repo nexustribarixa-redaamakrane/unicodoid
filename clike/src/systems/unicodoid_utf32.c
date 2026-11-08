@@ -111,6 +111,7 @@ static unicodoid_status_t utf32_validate(
     const unicodoid_system_t* sys, void* state, const void* in, size_t len,
     size_t* invalid
 ) {
+    if (len > 0 && !in) return UNICODOID_ERR_INVALID_PARAM;
     if (len % 4 != 0) {
         if (invalid) *invalid = len - (len % 4);
         return UNICODOID_ERR_INCOMPLETE_SEQUENCE;
@@ -136,7 +137,8 @@ static unicodoid_status_t utf32_char_count(
     size_t* out_count
 ) {
     (void)sys; (void)state;
-    if (!in || !out_count) return UNICODOID_ERR_INVALID_PARAM;
+    if (!out_count) return UNICODOID_ERR_INVALID_PARAM;
+    if (!in && len > 0) return UNICODOID_ERR_INVALID_PARAM;
     if (len % 4 != 0) return UNICODOID_ERR_INCOMPLETE_SEQUENCE;
     *out_count = len / 4;
     return UNICODOID_OK;
@@ -147,12 +149,14 @@ static unicodoid_status_t utf32_byte_count(
     size_t num_chars, size_t* out_bytes
 ) {
     (void)sys;
-    if (!chars || !out_bytes) return UNICODOID_ERR_INVALID_PARAM;
+    if (!out_bytes) return UNICODOID_ERR_INVALID_PARAM;
+    if (!chars && num_chars > 0) return UNICODOID_ERR_INVALID_PARAM;
     for (size_t i = 0; i < num_chars; ++i) {
         if (!unicodoid_is_valid_unicode_scalar((uint32_t)chars[i])) {
             return UNICODOID_ERR_UNMAPPABLE_CHAR;
         }
     }
+    if (num_chars > (SIZE_MAX / 4)) return UNICODOID_ERR_OVERFLOW;
     *out_bytes = num_chars * 4;
     return UNICODOID_OK;
 }

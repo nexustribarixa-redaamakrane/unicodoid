@@ -284,6 +284,49 @@ static void test_transcoding(void) {
     unicodoid_string_free(&src);
 }
 
+static void test_codec_encode_zero_capacity(void) {
+    /* Regression for NULL + offset UB: out may be NULL only when out_cap
+     * is 0; encoding a non-empty sequence must report BufferTooSmall with
+     * written == 0 (size-probe) instead of performing (NULL + 0). */
+    const unicodoid_system_t* sys = unicodoid_system_get_utf8();
+    unicodoid_codec_t codec;
+    CHECK_STATUS(unicodoid_codec_init(&codec, sys), UNICODOID_OK);
+
+    const unicodoid_char64_t chars[] = { 0x41, 0x00E9 };
+    size_t written = 99;
+    CHECK_STATUS(unicodoid_codec_encode(&codec, chars, 2, NULL, 0, &written),
+                 UNICODOID_ERR_BUFFER_TOO_SMALL);
+    CHECK(written == 0);
+
+    /* Empty sequence with NULL/0 succeeds. */
+    written = 99;
+    CHECK_STATUS(unicodoid_codec_encode(&codec, NULL, 0, NULL, 0, &written),
+                 UNICODOID_OK);
+    CHECK(written == 0);
+
+    /* Invalid scalar with zero capacity reports Unmappable, not BufferTooSmall. */
+    const unicodoid_char64_t bad[] = { 0xD800 };
+    CHECK_STATUS(unicodoid_codec_encode(&codec, bad, 1, NULL, 0, &written),
+                 UNICODOID_ERR_UNMAPPABLE_CHAR);
+
+    /* NULL destination with non-zero capacity is an invalid parameter. */
+    CHECK_STATUS(unicodoid_codec_encode(&codec, chars, 2, NULL, 8, &written),
+                 UNICODOID_ERR_INVALID_PARAM);
+
+    /* NULL input with non-zero length is an invalid parameter (validate). */
+    CHECK_STATUS(unicodoid_codec_validate(&codec, NULL, 3, NULL),
+                 UNICODOID_ERR_INVALID_PARAM);
+    size_t count = 0;
+    CHECK_STATUS(unicodoid_codec_char_count(&codec, NULL, 3, &count),
+                 UNICODOID_ERR_INVALID_PARAM);
+    /* Empty buffers with NULL are valid. */
+    CHECK_STATUS(unicodoid_codec_validate(&codec, NULL, 0, NULL), UNICODOID_OK);
+    CHECK_STATUS(unicodoid_codec_char_count(&codec, NULL, 0, &count), UNICODOID_OK);
+    CHECK(count == 0);
+
+    unicodoid_codec_free(&codec);
+}
+
 static void test_unicode_data_version(void) {
     /* Generated-data baseline: the shared generated Unicode tables must
      * report the Unicode version they were generated from. */
@@ -303,6 +346,7 @@ static void test_unicode_data_version(void) {
 int main(void) {
     test_status_and_registry();
     test_utf8();
+    test_codec_encode_zero_capacity();
     test_ascii_and_conlang();
     test_strings();
     test_transcoding();

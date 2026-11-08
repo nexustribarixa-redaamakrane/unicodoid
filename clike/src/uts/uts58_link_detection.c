@@ -301,9 +301,15 @@ typedef struct byte_buf {
 
 static void buf_put(byte_buf_t* b, const uint8_t* bytes, size_t n) {
     if (b->oom) return;
-    if (b->len + n > b->cap) {
+    /* Check for size_t overflow before adding: len + n could wrap. */
+    if (n > SIZE_MAX - b->len) { b->oom = true; return; }
+    size_t needed = b->len + n;
+    if (needed > b->cap) {
         size_t cap = b->cap ? b->cap : 64;
-        while (cap < b->len + n) cap *= 2;
+        while (cap < needed) {
+            if (cap > (SIZE_MAX / 2)) { b->oom = true; return; }
+            cap *= 2;
+        }
         uint8_t* p = (uint8_t*)realloc(b->data, cap);
         if (!p) { b->oom = true; return; }
         b->data = p;

@@ -1,24 +1,35 @@
 #!/usr/bin/env python3
-"""Generate Unicode 18.0.0 property tables for every Unicodoid language.
+"""Generate Unicode property tables for every Unicodoid language.
 
 The generator reads only the official files downloaded by fetch_ucd.py.  Every
 emitted file carries the Unicode version, generator version, and a checksum of
 the source data so that generated tables can be reproduced and audited.
 
-Outputs:
+Usage:
+    python tools/gen_ucd.py [--unicode-version 18.0.0]
+
+The Unicode version defaults to 18.0.0 (the current baseline).  When
+compatibility backports (e.g. U17/U16 data) are added, pass e.g.
+``--unicode-version 17.0.0``; the generator then reads from
+``data/ucd/<version>/`` and writes ``data/generated/ucd<major>_manifest.json``.
+Without the flag the behaviour is unchanged.
+
+Outputs (version-dependent manifest name):
   clike/include/unicodoid/unicodoid_ucd_data.h
   clike/src/unicodoid_ucd_data.c
   clike/csharp/Unicodoid/Generated/UcdData.cs
   rust/src/generated/ucd_data.rs
-  data/generated/ucd18_manifest.json
+  data/generated/ucd18_manifest.json  (for Unicode 18.0.0)
 """
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import re
 import struct
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -26,6 +37,7 @@ DATA = ROOT / "data" / "ucd" / "18.0.0"
 OUT_MANIFEST = ROOT / "data" / "generated" / "ucd18_manifest.json"
 GENERATOR_VERSION = "1.2.0"
 UNICODE_VERSION = "18.0.0"
+DEFAULT_UNICODE_VERSION = "18.0.0"
 
 MAX_CP = 0x110000
 
@@ -1196,8 +1208,49 @@ def emit_csharp(path: Path, data: dict):
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def main() -> int:
-    global pool_index
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Generate Unicode property tables from official UCD data.",
+        epilog=(
+            "Without arguments this generates the current 18.0.0 baseline. "
+            "Pass e.g. --unicode-version 17.0.0 for a compatibility backport; "
+            "the generator then reads data/ucd/<version>/ and writes "
+            "data/generated/ucd<major>_manifest.json."
+        ),
+    )
+    parser.add_argument(
+        "--unicode-version",
+        default=DEFAULT_UNICODE_VERSION,
+        help="Unicode version to generate from (default: %(default)s)",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    global pool_index, DATA, OUT_MANIFEST, UNICODE_VERSION
+    args = _parse_args(argv)
+
+    version = args.unicode_version.strip()
+    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+        print(
+            f"invalid --unicode-version {version!r}: expected X.Y.Z (e.g. 18.0.0)",
+            file=sys.stderr,
+        )
+        return 2
+    UNICODE_VERSION = version
+    DATA = ROOT / "data" / "ucd" / version
+    major = version.split(".", 1)[0]
+    OUT_MANIFEST = ROOT / "data" / "generated" / f"ucd{major}_manifest.json"
+
+    if not DATA.is_dir():
+        print(
+            f"data directory not found: {DATA} "
+            f"(fetch it first, e.g. 'python tools/fetch_ucd.py --unicode-version {version}')",
+            file=sys.stderr,
+        )
+        return 2
+
+    print(f"generating from Unicode {version} data in {DATA}")
     pool_index = {}
 
     print("parsing UnicodeData.txt")

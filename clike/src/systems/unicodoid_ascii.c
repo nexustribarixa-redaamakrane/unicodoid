@@ -83,6 +83,7 @@ static unicodoid_status_t ascii_validate(
     size_t* out_invalid_offset
 ) {
     (void)sys; (void)state;
+    if (in_len > 0 && !in_buf) return UNICODOID_ERR_INVALID_PARAM;
     const uint8_t* p = (const uint8_t*)in_buf;
     for (size_t i = 0; i < in_len; ++i) {
         if (p[i] > 0x7F) {
@@ -113,7 +114,8 @@ static unicodoid_status_t ascii_byte_count(
     size_t* out_bytes
 ) {
     (void)sys;
-    if (!chars || !out_bytes) return UNICODOID_ERR_INVALID_PARAM;
+    if (!out_bytes) return UNICODOID_ERR_INVALID_PARAM;
+    if (!chars && num_chars > 0) return UNICODOID_ERR_INVALID_PARAM;
     for (size_t i = 0; i < num_chars; ++i) {
         if (chars[i] > 0x7F) return UNICODOID_ERR_UNMAPPABLE_CHAR;
     }

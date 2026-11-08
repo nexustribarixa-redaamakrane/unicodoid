@@ -45,7 +45,17 @@ unicodoid_status_t unicodoid_segmenter_init(
     }
 
     size_t capacity = 32;
+    if (capacity > (SIZE_MAX / sizeof(uint32_t))) {
+        internal_free(in);
+        unicodoid_codec_free(&seg->codec);
+        return UNICODOID_ERR_OVERFLOW;
+    }
     in->cps = (uint32_t*)malloc(capacity * sizeof(uint32_t));
+    if (capacity + 1 > (SIZE_MAX / sizeof(size_t))) {
+        internal_free(in);
+        unicodoid_codec_free(&seg->codec);
+        return UNICODOID_ERR_OVERFLOW;
+    }
     in->offsets = (size_t*)malloc((capacity + 1) * sizeof(size_t));
     if (!in->cps || !in->offsets) {
         internal_free(in);
@@ -56,7 +66,17 @@ unicodoid_status_t unicodoid_segmenter_init(
     size_t off = 0;
     while (off < length_bytes) {
         if (in->count == capacity) {
+            if (capacity > (SIZE_MAX / 2)) {
+                internal_free(in);
+                unicodoid_codec_free(&seg->codec);
+                return UNICODOID_ERR_OVERFLOW;
+            }
             capacity *= 2;
+            if (capacity > (SIZE_MAX / sizeof(uint32_t))) {
+                internal_free(in);
+                unicodoid_codec_free(&seg->codec);
+                return UNICODOID_ERR_OVERFLOW;
+            }
             uint32_t* nc = (uint32_t*)realloc(in->cps, capacity * sizeof(uint32_t));
             if (!nc) {
                 internal_free(in);
@@ -64,6 +84,11 @@ unicodoid_status_t unicodoid_segmenter_init(
                 return UNICODOID_ERR_ALLOCATION_FAILED;
             }
             in->cps = nc;
+            if (capacity + 1 > (SIZE_MAX / sizeof(size_t))) {
+                internal_free(in);
+                unicodoid_codec_free(&seg->codec);
+                return UNICODOID_ERR_OVERFLOW;
+            }
             size_t* no = (size_t*)realloc(in->offsets, (capacity + 1) * sizeof(size_t));
             if (!no) {
                 internal_free(in);

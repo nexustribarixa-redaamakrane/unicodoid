@@ -1,0 +1,73 @@
+# Build and test all four Unicodoid language implementations:
+# C/C++ (CMake/CTest), Rust (cargo), and C# (.NET 8).
+#
+# The Unicode test vectors under data/ucd/ are not committed (see
+# .gitignore); each job fetches them from unicode.org first via
+# tools/fetch_ucd.py, which also extracts uca/CollationTest.zip.
+
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  cmake:
+    name: C/C++ (CMake + CTest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Fetch Unicode test data
+        run: python tools/fetch_ucd.py
+
+      - name: Configure CMake
+        run: cmake -S clike -B build/cmake_c -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: cmake --build build/cmake_c -j2
+
+      - name: Test
+        run: ctest --test-dir build/cmake_c -C Debug --output-on-failure
+
+  rust:
+    name: Rust (cargo test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Fetch Unicode test data
+        run: python tools/fetch_ucd.py
+
+      - name: Test
+        run: cargo test --manifest-path rust/Cargo.toml
+
+  dotnet:
+    name: C# (.NET 8)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Fetch Unicode test data
+        run: python tools/fetch_ucd.py
+
+      - name: Test
+        run: dotnet run --project clike/csharp/Unicodoid.Tests/Unicodoid.Tests.csproj --configuration Release

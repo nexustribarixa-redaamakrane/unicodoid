@@ -80,6 +80,11 @@ unicodoid_status_t unicodoid_codec_char_count(
  * State persists across the whole sequence, which is required for modal
  * systems.  On UNICODOID_ERR_BUFFER_TOO_SMALL, @p out_written receives the
  * number of bytes required for the prefix that was encoded.
+ *
+ * @p out may be NULL only when @p out_cap is 0.  In that case no bytes are
+ * written; encoding a non-empty sequence reports
+ * UNICODOID_ERR_BUFFER_TOO_SMALL (or UNICODOID_ERR_UNMAPPABLE_CHAR for an
+ * invalid value) with @p *out_written == 0, matching a size-probe call.
  */
 unicodoid_status_t unicodoid_codec_encode(
     unicodoid_codec_t* codec,

@@ -17,7 +17,14 @@ typedef struct scalar_vec {
 
 static unicodoid_status_t vec_push(scalar_vec_t* v, uint32_t cp) {
     if (v->length == v->capacity) {
-        size_t cap = v->capacity ? v->capacity * 2 : 32;
+        size_t cap;
+        if (v->capacity == 0) {
+            cap = 32;
+        } else {
+            if (v->capacity > (SIZE_MAX / 2)) return UNICODOID_ERR_OVERFLOW;
+            cap = v->capacity * 2;
+        }
+        if (cap > (SIZE_MAX / sizeof(uint32_t))) return UNICODOID_ERR_OVERFLOW;
         uint32_t* p = (uint32_t*)realloc(v->data, cap * sizeof(uint32_t));
         if (!p) return UNICODOID_ERR_ALLOCATION_FAILED;
         v->data = p;
@@ -39,9 +46,12 @@ typedef struct byte_vec {
 } byte_vec_t;
 
 static unicodoid_status_t bytes_reserve(byte_vec_t* v, size_t extra) {
-    if (v->length + extra <= v->capacity) return UNICODOID_OK;
+    /* Check for size_t overflow before adding: length + extra could wrap. */
+    if (extra > SIZE_MAX - v->length) return UNICODOID_ERR_OVERFLOW;
+    size_t needed = v->length + extra;
+    if (needed <= v->capacity) return UNICODOID_OK;
     size_t cap = v->capacity ? v->capacity : 64;
-    while (cap < v->length + extra) {
+    while (cap < needed) {
         if (cap > (SIZE_MAX / 2)) return UNICODOID_ERR_OVERFLOW;
         cap *= 2;
     }

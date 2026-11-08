@@ -236,10 +236,14 @@ derived from it (see `docs/unicode18/utn/utn1.md`).
 
 The Unicode 18.0.0 baseline is backed by generated data:
 
-- Official UCD 18.0.0 data is downloaded into `data/ucd/18.0.0/`.
+- Official UCD 18.0.0 data is downloaded into `data/ucd/18.0.0/`
+  (`python tools/fetch_ucd.py`, which also extracts `uca/CollationTest.zip`).
 - `tools/gen_ucd.py` (generator version `1.2.0`) derives the shared property,
   normalization, collation, emoji, named-sequence, link, spacing, and slicing
-  tables.
+  tables. The Unicode version is a generator argument
+  (`--unicode-version`, default `18.0.0`); a backport reads from
+  `data/ucd/<version>/` and writes `data/generated/ucd<major>_manifest.json`
+  (e.g. `--unicode-version 17.0.0` for a U17 backport).
 - `data/generated/ucd18_manifest.json` records the Unicode version, generator
   version, source checksum, and table counts for the generated data.
 
@@ -292,6 +296,11 @@ let written = codec.encode_char(0x1F600, &mut buffer).unwrap();
 ```
 
 ## Build and test
+
+GitHub Actions (`.github/workflows/ci.yml`) builds and tests all four
+implementations on every push and pull request. Each job fetches the
+(uncommitted) Unicode test vectors first with `python tools/fetch_ucd.py`,
+then runs the commands below.
 
 ### C and C++ (CMake)
 

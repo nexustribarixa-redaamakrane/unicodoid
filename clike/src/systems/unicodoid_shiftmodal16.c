@@ -201,6 +201,7 @@ static unicodoid_status_t shiftmodal_validate(
     size_t in_len,
     size_t* out_invalid_offset
 ) {
+    if (in_len > 0 && !in_buf) return UNICODOID_ERR_INVALID_PARAM;
     shiftmodal_state_t local;
     shiftmodal_state_t* st = shiftmodal_get_state(state, &local);
     const uint8_t* p = (const uint8_t*)in_buf;
@@ -240,7 +241,9 @@ static unicodoid_status_t shiftmodal_char_count(
     size_t in_len,
     size_t* out_count
 ) {
-    if (!in_buf || !out_count) return UNICODOID_ERR_INVALID_PARAM;
+    if (!out_count) return UNICODOID_ERR_INVALID_PARAM;
+    if (!in_buf && in_len > 0) return UNICODOID_ERR_INVALID_PARAM;
+    if (in_len == 0) { *out_count = 0; return UNICODOID_OK; }
 
     shiftmodal_state_t local;
     shiftmodal_state_t* st = shiftmodal_get_state(state, &local);
@@ -280,37 +283,41 @@ static unicodoid_status_t shiftmodal_byte_count(
     size_t* out_bytes
 ) {
     (void)sys;
-    if (!chars || !out_bytes) return UNICODOID_ERR_INVALID_PARAM;
+    if (!out_bytes) return UNICODOID_ERR_INVALID_PARAM;
+    if (!chars && num_chars > 0) return UNICODOID_ERR_INVALID_PARAM;
 
     shiftmodal_mode_t mode = SHIFTMODAL_BASE;
     size_t total = 0;
 
     for (size_t i = 0; i < num_chars; ++i) {
         unicodoid_char64_t ch = chars[i];
+        size_t need = 0;
         if (ch <= 0x7F) {
             if (shiftmodal_base_reserved((uint8_t)ch)) return UNICODOID_ERR_UNMAPPABLE_CHAR;
             if (mode == SHIFTMODAL_SHIFTED) {
-                total += 2;
+                need = 2;
                 mode = SHIFTMODAL_BASE;
             } else {
-                total += 1;
+                need = 1;
             }
         } else if (ch >= 0x0100 && ch <= 0x01FF) {
-            total += 2;
+            need = 2;
         } else if (ch >= 0x4000 && ch <= 0x40FF) {
             uint8_t b = (uint8_t)(ch & 0xFF);
             if (b == SHIFTMODAL_SI || b == SHIFTMODAL_ESC) {
                 return UNICODOID_ERR_UNMAPPABLE_CHAR;
             }
             if (mode == SHIFTMODAL_BASE) {
-                total += 2;
+                need = 2;
                 mode = SHIFTMODAL_SHIFTED;
             } else {
-                total += 1;
+                need = 1;
             }
         } else {
             return UNICODOID_ERR_UNMAPPABLE_CHAR;
         }
+        if (need > SIZE_MAX - total) return UNICODOID_ERR_OVERFLOW;
+        total += need;
     }
 
     *out_bytes = total;

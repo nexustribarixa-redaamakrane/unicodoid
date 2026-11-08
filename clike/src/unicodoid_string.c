@@ -96,7 +96,10 @@ unicodoid_status_t unicodoid_string_from_chars(
         unicodoid_status_t st = sys->ops.byte_count(sys, chars, num_chars, &req_bytes);
         if (st != UNICODOID_OK) return st;
     } else {
-        req_bytes = num_chars * (sys->meta.max_bytes_per_char ? sys->meta.max_bytes_per_char : 8);
+        size_t per_char = sys->meta.max_bytes_per_char ? sys->meta.max_bytes_per_char : 8;
+        /* Check for size_t overflow before multiplying. */
+        if (per_char > 0 && num_chars > (SIZE_MAX / per_char)) return UNICODOID_ERR_OVERFLOW;
+        req_bytes = num_chars * per_char;
     }
 
     unicodoid_status_t st = unicodoid_string_init(str, sys, req_bytes > 0 ? req_bytes : 16);
@@ -145,8 +148,14 @@ unicodoid_status_t unicodoid_string_clone(
 }
 
 static unicodoid_status_t ensure_capacity(unicodoid_string_t* str, size_t needed) {
+    /* Check for size_t overflow before adding: length + needed could wrap. */
+    if (needed > SIZE_MAX - str->length) return UNICODOID_ERR_OVERFLOW;
+    size_t total = str->length + needed;
+
     if (!str->is_owned) {
-        size_t new_cap = (str->length + needed) * 2;
+        /* Grow to at least double the required total (min 16), without overflow. */
+        size_t new_cap = total;
+        if (new_cap <= (SIZE_MAX / 2)) new_cap *= 2;
         if (new_cap < 16) new_cap = 16;
         uint8_t* new_data = (uint8_t*)malloc(new_cap);
         if (!new_data) return UNICODOID_ERR_ALLOCATION_FAILED;
@@ -157,9 +166,13 @@ static unicodoid_status_t ensure_capacity(unicodoid_string_t* str, size_t needed
         return UNICODOID_OK;
     }
 
-    if (str->length + needed > str->capacity) {
-        size_t new_cap = str->capacity * 2;
-        if (new_cap < str->length + needed) new_cap = str->length + needed + 16;
+    if (total > str->capacity) {
+        size_t new_cap = str->capacity ? str->capacity : 16;
+        if (new_cap <= (SIZE_MAX / 2)) new_cap *= 2;
+        if (new_cap < total) {
+            /* total + 16 could overflow; total alone is an exact fit. */
+            new_cap = (total <= (SIZE_MAX - 16)) ? total + 16 : total;
+        }
         uint8_t* new_data = (uint8_t*)realloc(str->data, new_cap);
         if (!new_data) return UNICODOID_ERR_ALLOCATION_FAILED;
         str->data = new_data;

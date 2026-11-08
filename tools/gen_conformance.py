@@ -1,20 +1,27 @@
 #!/usr/bin/env python3
 """Generate the C conformance test source from the official UAX29 test files.
 
-Reads the official Unicode 18.0.0 conformance test data:
-  data/ucd/18.0.0/ucd/auxiliary/GraphemeBreakTest.txt
-  data/ucd/18.0.0/ucd/auxiliary/WordBreakTest.txt
-  data/ucd/18.0.0/ucd/auxiliary/SentenceBreakTest.txt
-  data/ucd/18.0.0/ucd/auxiliary/LineBreakTest.txt
+Reads the official Unicode conformance test data:
+  data/ucd/<version>/ucd/auxiliary/GraphemeBreakTest.txt
+  data/ucd/<version>/ucd/auxiliary/WordBreakTest.txt
+  data/ucd/<version>/ucd/auxiliary/SentenceBreakTest.txt
+  data/ucd/<version>/ucd/auxiliary/LineBreakTest.txt
 
 and emits clike/tests/test_ucd18_conformance.c with segmenter vectors.
+
+Usage:
+    python tools/gen_conformance.py [--unicode-version 18.0.0]
 """
 
 from __future__ import annotations
 
+import argparse
+import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_UNICODE_VERSION = "18.0.0"
 OUT = ROOT / "clike" / "tests" / "test_ucd18_conformance.c"
 
 TEST_FILES = [
@@ -47,9 +54,9 @@ def parse_cases(path: Path):
         breaks = []
         pending = True
         for t in tokens:
-            if t == "\u00f7":
+            if t == "÷":
                 pending = True
-            elif t == "\u00d7":
+            elif t == "×":
                 pending = False
             else:
                 cps.append(int(t, 16))
@@ -189,17 +196,47 @@ def emit_type(short: str, cases, enum_line: str) -> str:
     return "\n".join(parts)
 
 
-def main() -> None:
+def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Generate UAX29 conformance test vectors from official data.",
+    )
+    parser.add_argument(
+        "--unicode-version",
+        default=DEFAULT_UNICODE_VERSION,
+        help="Unicode version to read (default: %(default)s)",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parse_args(argv)
+    version = args.unicode_version.strip()
+    if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+        print(
+            f"invalid --unicode-version {version!r}: expected X.Y.Z (e.g. 18.0.0)",
+            file=sys.stderr,
+        )
+        return 2
+    data_root = ROOT / "data" / "ucd" / version
+    if not data_root.is_dir():
+        print(
+            f"data directory not found: {data_root} "
+            f"(fetch it first, e.g. 'python tools/fetch_ucd.py --unicode-version {version}')",
+            file=sys.stderr,
+        )
+        return 2
+
     out = [HEADER]
     for short, fname, enum_line in TEST_FILES:
-        cases = parse_cases(ROOT / "data" / "ucd" / "18.0.0" / "ucd" / "auxiliary" / fname)
+        cases = parse_cases(data_root / "ucd" / "auxiliary" / fname)
         out.append(f"/* {fname}: {len(cases)} cases */\n")
         out.append(emit_type(short, cases, enum_line))
         out.append("")
     out.append(FOOTER)
     OUT.write_text("\n".join(out) + "\n", encoding="utf-8")
     print(f"wrote {OUT}")
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
