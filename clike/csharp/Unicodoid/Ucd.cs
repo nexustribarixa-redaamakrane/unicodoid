@@ -1,3 +1,4 @@
+using System;
 using Unicodoid.Generated;
 
 namespace Unicodoid;
@@ -437,4 +438,289 @@ public static class Ucd
 
     /// <summary>Vertical_Orientation (UAX #50); unlisted code points are U.</summary>
     public static byte VerticalOrientation(uint cp) => (byte)Lookup(UcdData.Vertical, cp);
+
+    /// <summary>Bidirectional_Class values (UAX #9), in generated-table order.</summary>
+    public static class Bc
+    {
+        public const byte L = 0, R = 1, En = 2, Es = 3, Et = 4, An = 5, Cs = 6;
+        public const byte B = 7, S = 8, Ws = 9, On = 10, Lre = 11, Lro = 12;
+        public const byte Al = 13, Rle = 14, Rlo = 15, Pdf = 16, Nsm = 17;
+        public const byte Bn = 18, Fsi = 19, Lri = 20, Rli = 21, Pdi = 22;
+    }
+
+    /// <summary>Joining_Type values (UAX #9 / UAX #53), in generated-table order.</summary>
+    public static class Jt
+    {
+        public const byte U = 0, C = 1, D = 2, L = 3, R = 4, T = 5;
+    }
+
+    /// <summary>
+    /// Binary properties exposed by the generated data layer (UAX #44).  The
+    /// numeric values match the C <c>unicodoid_binary_property</c> enum.
+    /// </summary>
+    public enum BinaryProperty
+    {
+        Alphabetic = 0,
+        Lowercase = 1,
+        Uppercase = 2,
+        Cased = 3,
+        CaseIgnorable = 4,
+        Math = 5,
+        IdStart = 6,
+        IdContinue = 7,
+        XidStart = 8,
+        XidContinue = 9,
+        DefaultIgnorableCodePoint = 10,
+        GraphemeExtend = 11,
+        GraphemeBase = 12,
+        GraphemeLink = 13,
+        WhiteSpace = 14,
+        PatternSyntax = 15,
+        PatternWhiteSpace = 16,
+        Dash = 17,
+        Hyphen = 18,
+        QuotationMark = 19,
+        TerminalPunctuation = 20,
+        Diacritic = 21,
+        Extender = 22,
+        SoftDotted = 23,
+        JoinControl = 24,
+        BidiControl = 25,
+        NoncharacterCodePoint = 26,
+        VariationSelector = 27,
+        Emoji = 28,
+        EmojiPresentation = 29,
+        EmojiModifier = 30,
+        EmojiModifierBase = 31,
+        EmojiComponent = 32,
+        ExtendedPictographic = 33,
+        UnifiedIdeograph = 34,
+        Radical = 35,
+        Deprecated = 36,
+        FullCompositionExclusion = 37,
+        SentenceTerminal = 38,
+        RegionalIndicator = 39,
+        ModifierCombiningMark = 40
+    }
+
+    /// <summary>Bidirectional_Class of <paramref name="cp"/> (UAX #9).</summary>
+    public static byte BidiClass(uint cp) => (byte)Lookup(UcdData.Bidi, cp);
+
+    /// <summary>Script value of <paramref name="cp"/> (UAX #24); indexes <see cref="ScriptName"/>.</summary>
+    public static ushort Script(uint cp) => Lookup(UcdData.Script_range, cp);
+
+    /// <summary>Number of known Script values including Unknown at index 0.</summary>
+    public static int ScriptCount => UcdData.ScriptNames.Length;
+
+    /// <summary>Script name for a value returned by <see cref="Script"/>, or null.</summary>
+    public static string? ScriptName(int index) =>
+        index >= 0 && index < UcdData.ScriptNames.Length ? UcdData.ScriptNames[index] : null;
+
+    /// <summary>Find a Script value by long name; 0 (Unknown) when absent.</summary>
+    public static ushort ScriptFind(string name)
+    {
+        for (int i = 0; i < UcdData.ScriptNames.Length; ++i)
+        {
+            if (string.Equals(UcdData.ScriptNames[i], name, StringComparison.Ordinal))
+            {
+                return (ushort)i;
+            }
+        }
+        return 0;
+    }
+
+    /// <summary>Joining_Type of <paramref name="cp"/> (UAX #9 / UAX #53).</summary>
+    public static byte JoiningType(uint cp) => (byte)Lookup(UcdData.Joining, cp);
+
+    /// <summary>Age value of <paramref name="cp"/>; indexes <see cref="AgeName"/>.</summary>
+    public static byte Age(uint cp) => (byte)Lookup(UcdData.Age_range, cp);
+
+    /// <summary>Age name for a value returned by <see cref="Age"/>, or null.</summary>
+    public static string? AgeName(int index) =>
+        index >= 0 && index < UcdData.AgeNames.Length ? UcdData.AgeNames[index] : null;
+
+    /// <summary>General_Category name for a value returned by <see cref="GeneralCategory"/>.</summary>
+    public static string? GeneralCategoryName(int value) =>
+        value >= 0 && value < UcdData.GcNames.Length ? UcdData.GcNames[value] : null;
+
+    /// <summary>Bidirectional_Class name for a value returned by <see cref="BidiClass"/>.</summary>
+    public static string? BidiClassName(int value) =>
+        value >= 0 && value < UcdData.BidiNames.Length ? UcdData.BidiNames[value] : null;
+
+    /// <summary>East_Asian_Width name for a value returned by <see cref="EastAsianWidth"/>.</summary>
+    public static string? EastAsianWidthName(int value) =>
+        value >= 0 && value < UcdData.EawNames.Length ? UcdData.EawNames[value] : null;
+
+    /// <summary>Line_Break name for a value returned by <see cref="LineBreak"/>.</summary>
+    public static string? LineBreakName(int value) =>
+        value >= 0 && value < UcdData.LineBreakNames.Length ? UcdData.LineBreakNames[value] : null;
+
+    /// <summary>Joining_Type name for a value returned by <see cref="JoiningType"/>.</summary>
+    public static string? JoiningTypeName(int value) =>
+        value >= 0 && value < UcdData.JoiningNames.Length ? UcdData.JoiningNames[value] : null;
+
+    private static UcdData.Range[] BinaryTable(BinaryProperty property) =>
+        property switch
+        {
+            BinaryProperty.Alphabetic => UcdData.Prop_alphabetic,
+            BinaryProperty.Lowercase => UcdData.Prop_lowercase,
+            BinaryProperty.Uppercase => UcdData.Prop_uppercase,
+            BinaryProperty.Cased => UcdData.Prop_cased,
+            BinaryProperty.CaseIgnorable => UcdData.Prop_case_ignorable,
+            BinaryProperty.Math => UcdData.Prop_math,
+            BinaryProperty.IdStart => UcdData.Prop_id_start,
+            BinaryProperty.IdContinue => UcdData.Prop_id_continue,
+            BinaryProperty.XidStart => UcdData.Prop_xid_start,
+            BinaryProperty.XidContinue => UcdData.Prop_xid_continue,
+            BinaryProperty.DefaultIgnorableCodePoint =>
+                UcdData.Prop_default_ignorable_code_point,
+            BinaryProperty.GraphemeExtend => UcdData.Prop_grapheme_extend,
+            BinaryProperty.GraphemeBase => UcdData.Prop_grapheme_base,
+            BinaryProperty.GraphemeLink => UcdData.Prop_grapheme_link,
+            BinaryProperty.WhiteSpace => UcdData.Prop_white_space,
+            BinaryProperty.PatternSyntax => UcdData.Prop_pattern_syntax,
+            BinaryProperty.PatternWhiteSpace => UcdData.Prop_pattern_white_space,
+            BinaryProperty.Dash => UcdData.Prop_dash,
+            BinaryProperty.Hyphen => UcdData.Prop_hyphen,
+            BinaryProperty.QuotationMark => UcdData.Prop_quotation_mark,
+            BinaryProperty.TerminalPunctuation => UcdData.Prop_terminal_punctuation,
+            BinaryProperty.Diacritic => UcdData.Prop_diacritic,
+            BinaryProperty.Extender => UcdData.Prop_extender,
+            BinaryProperty.SoftDotted => UcdData.Prop_soft_dotted,
+            BinaryProperty.JoinControl => UcdData.Prop_join_control,
+            BinaryProperty.BidiControl => UcdData.Prop_bidi_control,
+            BinaryProperty.NoncharacterCodePoint => UcdData.Prop_noncharacter_code_point,
+            BinaryProperty.VariationSelector => UcdData.Prop_variation_selector,
+            BinaryProperty.Emoji => UcdData.Prop_emoji,
+            BinaryProperty.EmojiPresentation => UcdData.Prop_emoji_presentation,
+            BinaryProperty.EmojiModifier => UcdData.Prop_emoji_modifier,
+            BinaryProperty.EmojiModifierBase => UcdData.Prop_emoji_modifier_base,
+            BinaryProperty.EmojiComponent => UcdData.Prop_emoji_component,
+            BinaryProperty.ExtendedPictographic => UcdData.Prop_extended_pictographic,
+            BinaryProperty.UnifiedIdeograph => UcdData.Prop_unified_ideograph,
+            BinaryProperty.Radical => UcdData.Prop_radical,
+            BinaryProperty.Deprecated => UcdData.Prop_deprecated,
+            BinaryProperty.FullCompositionExclusion => UcdData.Prop_full_composition_exclusion,
+            BinaryProperty.SentenceTerminal => UcdData.Prop_sentence_terminal,
+            BinaryProperty.RegionalIndicator => UcdData.Prop_regional_indicator,
+            BinaryProperty.ModifierCombiningMark => UcdData.Prop_modifier_combining_mark,
+            _ => UcdData.Prop_alphabetic
+        };
+
+    /// <summary>True when <paramref name="cp"/> has the binary property (UAX #44).</summary>
+    public static bool HasBinaryProperty(uint cp, BinaryProperty property) =>
+        Lookup(BinaryTable(property), cp) != 0;
+
+    private static uint[]? MapLookup(UcdData.MapEntry[] table, uint cp)
+    {
+        int lo = 0;
+        int hi = table.Length;
+        while (lo < hi)
+        {
+            int mid = lo + (hi - lo) / 2;
+            UcdData.MapEntry entry = table[mid];
+            if (cp < entry.Cp)
+            {
+                hi = mid;
+            }
+            else if (cp > entry.Cp)
+            {
+                lo = mid + 1;
+            }
+            else
+            {
+                var parts = new uint[entry.Length];
+                int offset = (int)entry.Offset;
+                for (int i = 0; i < parts.Length; ++i) parts[i] = UcdData.Pool[offset + i];
+                return parts;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>Confusable mapping (UTS #39), or null when <paramref name="cp"/> has none.</summary>
+    public static uint[]? Confusable(uint cp) => MapLookup(UcdData.Confusables, cp);
+
+    /// <summary>IDNA disposition values returned by <see cref="IdnaStatus"/>.</summary>
+    public static class IdnaDisposition
+    {
+        public const int Valid = 0, Mapped = 1, Deviation = 2, Ignored = 3, Disallowed = 4;
+    }
+
+    /// <summary>
+    /// IDNA disposition (UTS #46) and the mapping for mapped/deviation code
+    /// points.  <paramref name="mapping"/> is null for other dispositions.
+    /// </summary>
+    public static int IdnaStatus(uint cp, out uint[]? mapping)
+    {
+        int status = (int)Lookup(UcdData.Idna_status_range, cp);
+        mapping = status is IdnaDisposition.Mapped or IdnaDisposition.Deviation
+            ? MapLookup(UcdData.Idna_mappings, cp)
+            : null;
+        return status;
+    }
+
+    /// <summary>True when <paramref name="cp"/> is disallowed in transitional processing (UTS #46).</summary>
+    public static bool IdnaNv8(uint cp) => Lookup(UcdData.Idna_nv8_range, cp) != 0;
+
+    private static uint[] FullMapping(UcdData.MapEntry[] table, uint cp)
+    {
+        uint[]? mapping = MapLookup(table, cp);
+        return mapping ?? new[] { cp };
+    }
+
+    /// <summary>Full case folding (UTS #18 / UAX #44) for <paramref name="cp"/>.</summary>
+    public static uint[] ToCasefold(uint cp)
+    {
+        uint[] mapping = FullMapping(UcdData.Fold_full, cp);
+        if (mapping.Length == 1 && mapping[0] == cp)
+        {
+            mapping[0] = PairLookup(UcdData.Simple_fold, cp);
+        }
+        return mapping;
+    }
+
+    /// <summary>True when <paramref name="cp"/> has a case folding different from itself.</summary>
+    public static bool HasCasefold(uint cp)
+    {
+        uint[] mapping = ToCasefold(cp);
+        return mapping.Length > 0 && (mapping.Length != 1 || mapping[0] != cp);
+    }
+
+    /// <summary>Full uppercase mapping for <paramref name="cp"/> (UAX #44).</summary>
+    public static uint[] ToUppercase(uint cp) => FullMapping(UcdData.Upper_full, cp);
+
+    /// <summary>Full lowercase mapping for <paramref name="cp"/> (UAX #44).</summary>
+    public static uint[] ToLowercase(uint cp) => FullMapping(UcdData.Lower_full, cp);
+
+    /// <summary>Full titlecase mapping for <paramref name="cp"/> (UAX #44).</summary>
+    public static uint[] ToTitlecase(uint cp) => FullMapping(UcdData.Title_full, cp);
+
+    /// <summary>Numeric_Value as an exact fraction, when present (UAX #44).</summary>
+    public static bool TryNumericValue(uint cp, out long numerator, out long denominator)
+    {
+        foreach (UcdData.Numeric entry in UcdData.NumericValues)
+        {
+            if (entry.Cp == cp)
+            {
+                numerator = entry.Numerator;
+                denominator = entry.Denominator;
+                return true;
+            }
+        }
+        numerator = 0;
+        denominator = 0;
+        return false;
+    }
+
+    /// <summary>Decimal_Digit_Value, or -1 when <paramref name="cp"/> is not a decimal digit.</summary>
+    public static int DecimalDigit(uint cp)
+    {
+        foreach (UcdData.Numeric entry in UcdData.NumericValues)
+        {
+            if (entry.Cp != cp) continue;
+            return entry.Digit >= 0 ? (int)entry.Digit : -1;
+        }
+        return -1;
+    }
 }

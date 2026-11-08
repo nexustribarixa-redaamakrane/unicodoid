@@ -53,3 +53,7 @@ path = "tests/harness.rs"
 [[test]]
 name = "utr59"
 path = "tests/utr59.rs"
+
+[[test]]
+name = "new_reports"
+path = "tests/new_reports.rs"

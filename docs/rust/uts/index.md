@@ -1,18 +1,27 @@
-# Rust — UTS (Unicode Technical Standards)
+# Rust - UTS (Unicode Technical Standards)
 
-Part of the Unicodoid Unicode 18.0.0 implementation. Native Rust modules over
-generated Unicode 18.0.0 data.
+Part of the Unicodoid Unicode 18.0.0 implementation. Each module is a native
+Rust module in `rust/src/uts/` over the generated Unicode 18.0.0 tables. The
+full cross-language matrix is in the top-level
+[report coverage](../../index.md#report-coverage).
 
-| Doc | Specification | What it covers |
+| Doc | Specification | Rust module |
 | --- | --- | --- |
-| [uts10.md](uts10.md) | UTS #10 Unicode Collation Algorithm | `rust/src/uts/uts10.rs` — sort keys, strengths, numeric ordering |
-| [uts51.md](uts51.md) | UTS #51 Unicode Emoji | `rust/src/uts/uts51.rs` — RGI emoji sequence validation (3,972) |
-| [uts58.md](uts58.md) | UTS #58 Link Detection and Formatting | `rust/src/uts/uts58.rs` — detection, escaping, email local part |
+| [uts10.md](uts10.md) | UTS #10 Unicode Collation Algorithm | `uts::uts10` |
+| - | UTS #18 Regular Expressions | `uts::uts18` |
+| - | UTS #35 CLDR Part 1: Core | `uts::cldr` |
+| - | UTS #37 Ideographic Variation Database | `uts::uts37` |
+| - | UTS #39 Security Mechanisms | `uts::uts39` |
+| - | UTS #46 IDNA Compatibility | `uts::uts46` |
+| [uts51.md](uts51.md) | UTS #51 Unicode Emoji | `uts::uts51` |
+| - | UTS #55 Source Code Handling | `uts::uts55` |
+| [uts58.md](uts58.md) | UTS #58 Link Detection and Formatting | `uts::uts58` |
+| - | UTS #61 Set Notation | `uts::uts61` |
 
-**Status:** `tests/collation.rs`, `tests/uts51.rs`, and `tests/uts58.rs`
-validate the official Unicode 18.0.0 vectors and pass.
+**Status:** the collation, emoji-sequence, link-detection, and formatting
+suites plus `tests/new_reports.rs` pass with `cargo test`.
 
-**Out of scope (by design):** URL initiation, CLDR tailorings, and UCA §11
-search; see the per-spec notes.
+**Out of scope (by design):** CLDR XML resource bundles, URL initiation, and
+UCA search; see the per-spec notes.
 
 *Generated tables:* `rust/src/generated/` (Unicode 18.0.0, generator 1.2.0).

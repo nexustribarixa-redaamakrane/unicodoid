@@ -1,18 +1,34 @@
-# C++ — UAX (Unicode Standard Annexes)
+# C++ - UAX (Unicode Standard Annexes)
 
-Part of the Unicodoid Unicode 18.0.0 implementation. The C++ modules are
-**native implementations** over the generated Unicode 18.0.0 tables — they do
-not forward to the C segmenter or property code.
+Part of the Unicodoid Unicode 18.0.0 implementation. Each module lives in
+`clike/cpp/include/unicodoid/uax/` and `clike/cpp/src/uax/`. The full
+cross-language matrix is in the top-level
+[report coverage](../../index.md#report-coverage).
 
-| Doc | Specification | What it covers |
+| Doc | Specification | C++ header |
 | --- | --- | --- |
-| [uax15.md](uax15.md) | UAX #15 Normalization Forms | NFC/NFD/NFKC/NFKD decomposition, composition, and Hangul handling |
-| [uax29.md](uax29.md) | UAX #29 Text Segmentation | Grapheme, word, line, and sentence rules in `cpp/src/uax/uax29_segmentation.cpp` (incl. GB9c conjunct avoidance) |
-| [uax34.md](uax34.md) | UAX #34 Named Character Sequences | Name lookup (461 sequences) |
-| [uax44.md](uax44.md) | UAX #44 Unicode Character Database | Property lookups (`General_Category`, `Script`, `Bidi_Class`, …) |
+| - | UAX #9 Bidirectional Algorithm | `uax/uax9_bidi.hpp` |
+| - | UAX #11 East Asian Width | `uax/uax11_eaw.hpp` |
+| - | UAX #14 Line Breaking Algorithm | `uax/uax14_linebreak.hpp` |
+| [uax15.md](uax15.md) | UAX #15 Normalization Forms | `uax/uax15_normalization.hpp` |
+| - | UAX #24 Script Property | `uax/uax24_script_property.hpp` |
+| [uax29.md](uax29.md) | UAX #29 Text Segmentation | `uax/uax29_segmentation.hpp` |
+| - | UAX #31 Identifiers and Syntax | `uax/uax31_identifiers.hpp` |
+| [uax34.md](uax34.md) | UAX #34 Named Character Sequences | `uax/uax34_named_sequences.hpp` |
+| - | UAX #38 Han Database (Unihan) | `uax/uax38_unihan.hpp` |
+| - | UAX #41 Common References | `uax/uax41_common_refs.hpp` |
+| - | UAX #42 UCD in XML | `uax/uax42_ucd_xml.hpp` |
+| [uax44.md](uax44.md) | UAX #44 Unicode Character Database | `uax/uax44_properties.hpp` |
+| - | UAX #45 U-source Ideographs | `uax/uax45_usource_ideographs.hpp` |
+| - | UAX #50 Vertical Text Layout | `uax/uax50_vtl.hpp` |
+| - | UAX #53 Arabic Mark Rendering | `uax/uax53_arabic_mark_rendering.hpp` |
+| - | UAX #57 Egyptian Hieroglyph Database | `uax/uax57_unikemet.hpp` |
+| - | UAX #60 Data for East Asian Scripts | `uax/uax60_ea_script_data.hpp` |
 
-**Status:** `test_cpp_conformance` (segmentation), `test_cpp_specs`
-(version + spec tables), and `test_cpp` pass in CTest.
+**Status:** `test_cpp`, `test_cpp_conformance`, `test_cpp_specs`, and
+`test_cpp_new_reports` pass in CTest. UAX #9 / #38 / #41 / #42 / #45 / #53 /
+#57 forward to the C reference implementation so both paths agree exactly;
+the remaining modules are native C++ over the generated tables.
 
 *Generated tables:* shared Unicode 18.0.0 layer (generator 1.2.0), linked via
 the C `unicodoid` library.

@@ -1590,6 +1590,96 @@ internal static partial class Program
         RunConformanceSuite("SentenceBreakTest.txt", BoundaryType.Sentence);
     }
 
+    private static void TestNewReports()
+    {
+        // UAX #9
+        uint[] abc = ['a', 'b', 'c'];
+        byte[] levels = Uax9.ResolveLevels(abc, Uax9.Ltr);
+        Check(levels.Length == 3);
+        Check(levels[0] == 0 && levels[1] == 0 && levels[2] == 0);
+        uint[] heb = [0x05D0, 0x05D0];
+        levels = Uax9.ResolveLevels(heb, Uax9.Auto);
+        Check(levels.Length == 2);
+        Check((levels[0] % 2) == 1);
+        Check(Uax9.IsMirrored('('));
+        Check(Uax9.MirroredGlyph('(') == ')');
+        Check(Uax9.IsPairedBracket('('));
+
+        // UAX #11 / #14 / #15 / #24 / #31
+        Check(Uax11.IsWide(0xAC00));
+        Check(Uax11.ColumnCount(0xAC00, false) == 2);
+        Check(Uax11.ColumnCount('A', false) == 1);
+        Check(Uax14.LineBreak('A') == Ucd.LineBreak('A'));
+        uint[] line = ['a', 'b', 'c', ' ', 'd'];
+        Check(Uax14.NextBreak(line, 0) == 4);
+        uint[] decomposed = [0x65, 0x0301];
+        uint[] composed = Normalization.Normalize(decomposed, NormalizationForm.Nfc);
+        Check(composed.Length == 1 && composed[0] == 0x00E9);
+        Check(Uax24.IsScript('A', Uax24.Find("Latin")));
+        uint[] id = ['a', 'b', '1'];
+        Check(Uax31.IsValid(id));
+        uint[] badId = ['1', 'a'];
+        Check(!Uax31.IsValid(badId));
+
+        // UAX #38 / #41 / #42 / #44 / #45 / #50 / #53 / #57 / #60
+        Check(Uax38.IsUnifiedIdeograph(0x4E2D));
+        Check(Uax38.IsRadical(0x2F00));
+        Check(Uax41.Revision == "38");
+        Check(Uax42.CharRecord('A').Contains("<char", StringComparison.Ordinal));
+        Check(Uax44.PropertyAlias("gc") == "General_Category");
+        Check(Uax44.HasCasefold('A'));
+        Check(Uax45.IsUSource(0x4E2D));
+        Check(!Uax50.IsUpright('A'));
+        Check(Uax50.IsUpright(0x3042));
+        uint[] arabic = [0x0627, 0x0627];
+        Check(Uax53.IsConsistent(arabic));
+        Check(Uax57.IsHieroglyph(0x13000));
+        Check(Uax57.IsLegacy(0x13000));
+        Check(Uax60.IsHan(0x4E2D));
+
+        // UTR #17 / #23 / #25 / #33 / #54 / #56
+        Check(Utr17.Utf8Length(0x1F600) == 4);
+        Check(Utr17.Utf16Length(0x1F600) == 2);
+        Check(Utr23.BinaryPropertyCount == 41);
+        Check(Utr25.IsMath('+'));
+        Check(Utr25.IsMathAlphanumeric(0x1D400));
+        Check(Utr33.LevelName(1) == "Well_Formed");
+        Check(Utr54.IsMongolian(0x1800));
+        Check(Utr54.IsFvs(0x180B));
+        Check(Utr56.IsCuneiform(0x12000));
+
+        // UTS #18 / #37 / #39 / #46 / #55 / #61
+        Check(Uts18.PropertyMatch("\\p{Lu}", 'A') != Uts18.None);
+        Check(Uts18.PropertyMatch("\\p{Lu}", 'a') == Uts18.None);
+        uint[] ivs = [0x4E2D, 0xE0100];
+        Check(Uts37.IsIvs(ivs));
+        uint[] confA = ['O'];
+        uint[] confB = [0x039F];
+        _ = Uts39.AreConfusable(confA, confA);
+        _ = Uts39.AreConfusable(confA, confB);
+        uint[] label = ['a', 'b'];
+        Check(Uts46.CheckLabel(label));
+        Check(Uts55.IsBidiControl(0x202A));
+        Check(Uts61.SetMembership("\\p{Lu}", 'A') == 1);
+        Check(Uts61.SetMembership("41..5A", 'A') == 1);
+
+        // UTS #35 (CLDR)
+        Check(Cldr.TryParseLocale("en-US", out Cldr.Locale loc) && loc.Language == "en");
+        Check(Cldr.IsValidLocale("de-DE"));
+        Check(Cldr.GetNumberSymbols("DE").Decimal == ",");
+        Check(Cldr.IsDecimal("3.14"));
+        Check(Cldr.IsDatePattern("yyyy-MM-dd"));
+        Check(Cldr.GetCollation("en").Strength == 3);
+        Check(Cldr.IsWeekday("en", "Monday"));
+        Check(Cldr.DayCount("en", 2, true) == 29);
+        Check(Cldr.IsKeyboardId("en_US"));
+        Check(Cldr.GetPlural("en", 1.0) == Cldr.Plural.One);
+        Check(Cldr.IsMessagePatternValid("{x}"));
+        Check(Cldr.GetNameOrder("zh") == Cldr.NameOrder.FamilyFirst);
+        Check(Cldr.IsPersonName("en", "John"));
+        Check(Cldr.IsZoneId("Europe/London"));
+    }
+
     private static int Main()
     {
         TestStatusAndRegistry();
@@ -1615,6 +1705,7 @@ internal static partial class Program
         TestAppendBytesState();
         TestStatefulTranscode();
         TestConvertUtf();
+        TestNewReports();
 
         if (s_failures == 0)
         {

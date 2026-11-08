@@ -33,10 +33,46 @@ set(UNICODOID_C_SOURCES
     src/ConvertUTF.c
     src/uax/uax29_segmentation.c
     src/uax/uax34_named_sequences.c
+    src/uax/uax9_bidi.c
+    src/uax/uax11_eaw.c
+    src/uax/uax14_linebreak.c
+    src/uax/uax15_normalization.c
+    src/uax/uax24_script_property.c
+    src/uax/uax31_identifiers.c
+    src/uax/uax38_unihan.c
+    src/uax/uax41_common_refs.c
+    src/uax/uax42_ucd_xml.c
+    src/uax/uax44_ucd.c
+    src/uax/uax45_usource_ideographs.c
+    src/uax/uax50_vtl.c
+    src/uax/uax53_arabic_mark_rendering.c
+    src/uax/uax57_unikemet.c
+    src/uax/uax60_ea_script_data.c
     src/uts/uts58_link_detection.c
     src/uts/uts10_collation.c
     src/uts/uts51_emoji_sequences.c
+    src/uts/uts18_regex.c
+    src/uts/uts37_ivd.c
+    src/uts/uts39_security.c
+    src/uts/uts46_idna_compat.c
+    src/uts/uts55_source_code.c
+    src/uts/uts61_set_notation.c
+    src/uts/uts35_cldr/cldr_core.c
+    src/uts/uts35_cldr/cldr_numbers.c
+    src/uts/uts35_cldr/cldr_dates.c
+    src/uts/uts35_cldr/cldr_collation.c
+    src/uts/uts35_cldr/cldr_general.c
+    src/uts/uts35_cldr/cldr_keyboards.c
+    src/uts/uts35_cldr/cldr_messageformat.c
+    src/uts/uts35_cldr/cldr_person_names.c
+    src/uts/uts35_cldr/cldr_supplemental.c
     src/utr/utr59_east_asian_spacing.c
+    src/utr/utr17_character_encoding_model.c
+    src/utr/utr23_character_property_model.c
+    src/utr/utr25_mathematics.c
+    src/utr/utr33_conformance.c
+    src/utr/utr54_mongolian.c
+    src/utr/utr56_cuneiform_signlists.c
     src/systems/unicodoid_utf8.c
     src/systems/unicodoid_utf16.c
     src/systems/unicodoid_utf32.c
@@ -64,13 +100,39 @@ if(UNICODOID_BUILD_CPP)
     add_library(unicodoid_cpp STATIC
         cpp/src/unicodoid_cpp.cpp
         cpp/src/ConvertUTF.cpp
+        cpp/src/uax/uax9_bidi.cpp
+        cpp/src/uax/uax11_eaw.cpp
+        cpp/src/uax/uax14_linebreak.cpp
         cpp/src/uax/uax15_normalization.cpp
+        cpp/src/uax/uax24_script_property.cpp
         cpp/src/uax/uax29_segmentation.cpp
+        cpp/src/uax/uax31_identifiers.cpp
         cpp/src/uax/uax34_named_sequences.cpp
+        cpp/src/uax/uax38_unihan.cpp
+        cpp/src/uax/uax41_common_refs.cpp
+        cpp/src/uax/uax42_ucd_xml.cpp
         cpp/src/uax/uax44_properties.cpp
+        cpp/src/uax/uax45_usource_ideographs.cpp
+        cpp/src/uax/uax50_vtl.cpp
+        cpp/src/uax/uax53_arabic_mark_rendering.cpp
+        cpp/src/uax/uax57_unikemet.cpp
+        cpp/src/uax/uax60_ea_script_data.cpp
         cpp/src/uts/uts10_collation.cpp
+        cpp/src/uts/uts18_regex.cpp
+        cpp/src/uts/uts37_ivd.cpp
+        cpp/src/uts/uts39_security.cpp
+        cpp/src/uts/uts46_idna_compat.cpp
         cpp/src/uts/uts51_emoji_sequences.cpp
+        cpp/src/uts/uts55_source_code.cpp
         cpp/src/uts/uts58_link_detection.cpp
+        cpp/src/uts/uts61_set_notation.cpp
+        cpp/src/uts/cldr.cpp
+        cpp/src/utr/utr17_character_encoding_model.cpp
+        cpp/src/utr/utr23_character_property_model.cpp
+        cpp/src/utr/utr25_mathematics.cpp
+        cpp/src/utr/utr33_conformance.cpp
+        cpp/src/utr/utr54_mongolian.cpp
+        cpp/src/utr/utr56_cuneiform_signlists.cpp
         cpp/src/utr/utr59_east_asian_spacing.cpp
     )
     add_library(Unicodoid::cpp ALIAS unicodoid_cpp)
@@ -155,6 +217,10 @@ if(UNICODOID_BUILD_TESTS)
     target_link_libraries(test_convertutf PRIVATE unicodoid)
     add_test(NAME convertutf COMMAND test_convertutf)
 
+    add_executable(test_new_reports tests/test_new_reports.c)
+    target_link_libraries(test_new_reports PRIVATE unicodoid)
+    add_test(NAME new_reports COMMAND test_new_reports)
+
     if(UNICODOID_BUILD_CPP)
         add_executable(test_cpp tests/test_cpp.cpp)
         target_link_libraries(test_cpp PRIVATE unicodoid_cpp unicodoid)
@@ -166,6 +232,10 @@ if(UNICODOID_BUILD_TESTS)
             UNICODOID_UCD_AUX_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../data/ucd/18.0.0/ucd/auxiliary"
         )
         add_test(NAME cpp_conformance COMMAND test_cpp_conformance)
+
+        add_executable(test_cpp_new_reports cpp/tests/test_cpp_new_reports.cpp)
+        target_link_libraries(test_cpp_new_reports PRIVATE unicodoid_cpp unicodoid)
+        add_test(NAME cpp_new_reports COMMAND test_cpp_new_reports)
 
         add_executable(test_cpp_specs cpp/tests/test_cpp_specs.cpp)
         target_link_libraries(test_cpp_specs PRIVATE unicodoid_cpp unicodoid)

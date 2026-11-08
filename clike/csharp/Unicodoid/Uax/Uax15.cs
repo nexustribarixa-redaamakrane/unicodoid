@@ -334,4 +334,27 @@ public static class Normalization
         UnicodoidStatus status = TryNormalize(system, input, form, out byte[] normalized);
         return status == UnicodoidStatus.Ok && normalized.AsSpan().SequenceEqual(input);
     }
+
+    /// <summary>
+    /// Normalize a scalar sequence (UAX #15).  This is the scalar-level entry
+    /// point used by the report modules; it shares the decomposition,
+    /// ordering and composition tables with the byte-level API.
+    /// </summary>
+    public static uint[] Normalize(ReadOnlySpan<uint> cps, NormalizationForm form)
+    {
+        if (cps.IsEmpty) return Array.Empty<uint>();
+
+        bool compatibility = form is NormalizationForm.Nfkc or NormalizationForm.Nfkd;
+        var decomposed = new List<uint>(cps.Length);
+        foreach (uint cp in cps) Decompose(cp, compatibility, decomposed);
+        CanonicalOrder(decomposed);
+
+        if (form is NormalizationForm.Nfc or NormalizationForm.Nfkc)
+        {
+            var composed = new List<uint>(decomposed.Count);
+            Compose(decomposed, composed);
+            return composed.ToArray();
+        }
+        return decomposed.ToArray();
+    }
 }

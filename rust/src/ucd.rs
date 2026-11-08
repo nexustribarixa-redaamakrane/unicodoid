@@ -506,6 +506,132 @@ fn pair_lookup_checked(table: &[data::Pair], cp: u32) -> Option<u32> {
     None
 }
 
+/// Bidirectional_Class (UAX #9), in generated-table order.
+pub mod bidi {
+    pub const L: u8 = 0;
+    pub const R: u8 = 1;
+    pub const EN: u8 = 2;
+    pub const ES: u8 = 3;
+    pub const ET: u8 = 4;
+    pub const AN: u8 = 5;
+    pub const CS: u8 = 6;
+    pub const B: u8 = 7;
+    pub const S: u8 = 8;
+    pub const WS: u8 = 9;
+    pub const ON: u8 = 10;
+    pub const LRE: u8 = 11;
+    pub const LRO: u8 = 12;
+    pub const AL: u8 = 13;
+    pub const RLE: u8 = 14;
+    pub const RLO: u8 = 15;
+    pub const PDF: u8 = 16;
+    pub const NSM: u8 = 17;
+    pub const BN: u8 = 18;
+    pub const FSI: u8 = 19;
+    pub const LRI: u8 = 20;
+    pub const RLI: u8 = 21;
+    pub const PDI: u8 = 22;
+}
+
+/// Joining_Type (UAX #53), in generated-table order.
+pub mod joining {
+    pub const U: u8 = 0;
+    pub const C: u8 = 1;
+    pub const D: u8 = 2;
+    pub const L: u8 = 3;
+    pub const R: u8 = 4;
+    pub const T: u8 = 5;
+}
+
+/// Bidirectional_Class value (UAX #9).
+#[inline]
+pub fn bidi_class(cp: u32) -> u8 {
+    lookup(data::BIDI, cp) as u8
+}
+
+/// Joining_Type value (UAX #53).
+#[inline]
+pub fn joining_type(cp: u32) -> u8 {
+    lookup(data::JOINING, cp) as u8
+}
+
+/// Script value (UAX #24); indexes `SCRIPT_NAMES`.
+#[inline]
+pub fn script(cp: u32) -> u16 {
+    lookup(data::SCRIPT_RANGE, cp) as u16
+}
+
+/// Script name for a Script value.
+pub fn script_name(value: u16) -> Option<&'static str> {
+    data::SCRIPT_NAMES.get(value as usize).copied()
+}
+
+/// Number of Script values (including Unknown at index 0).
+pub fn script_count() -> usize {
+    data::SCRIPT_NAMES.len()
+}
+
+/// Confusable mapping (UTS #39), if any.
+pub fn confusable(cp: u32) -> Option<Vec<u32>> {
+    let mut lo = 0usize;
+    let mut hi = data::CONFUSABLES.len();
+    while lo < hi {
+        let mid = lo + (hi - lo) / 2;
+        let (start, offset, length, _kind) = data::CONFUSABLES[mid];
+        if cp < start {
+            hi = mid;
+        } else if cp > start {
+            lo = mid + 1;
+        } else {
+            let begin = offset as usize;
+            return Some(data::POOL[begin..begin + length as usize].to_vec());
+        }
+    }
+    None
+}
+
+/// IDNA mapping status (UTS #46): 0 valid, 1 mapped, 2 deviation, 3 ignored, 4 disallowed.
+pub fn idna_status(cp: u32) -> u8 {
+    lookup(data::IDNA_STATUS_RANGE, cp) as u8
+}
+
+/// IDNA mapping sequence for `cp`, if any.
+pub fn idna_mapping(cp: u32) -> Option<Vec<u32>> {
+    let mut lo = 0usize;
+    let mut hi = data::IDNA_MAPPINGS.len();
+    while lo < hi {
+        let mid = lo + (hi - lo) / 2;
+        let (start, offset, length, _kind) = data::IDNA_MAPPINGS[mid];
+        if cp < start {
+            hi = mid;
+        } else if cp > start {
+            lo = mid + 1;
+        } else {
+            let begin = offset as usize;
+            return Some(data::POOL[begin..begin + length as usize].to_vec());
+        }
+    }
+    None
+}
+
+/// True when `cp` has the NV8 flag (UTS #46 transitional disallowed).
+#[inline]
+pub fn idna_nv8(cp: u32) -> bool {
+    lookup(data::IDNA_NV8_RANGE, cp) != 0
+}
+
+/// Math binary property (UTR #25).
+#[inline]
+pub fn is_math(cp: u32) -> bool {
+    lookup(data::PROP_MATH, cp) != 0
+}
+
+/// Bidi control binary property (UTS #55).
+#[inline]
+pub fn is_bidi_control(cp: u32) -> bool {
+    lookup(data::PROP_BIDI_CONTROL, cp) != 0
+}
+
 #[inline]
 pub fn extended_pictographic(cp: u32) -> bool {
     lookup(data::PROP_EXTENDED_PICTOGRAPHIC, cp) != 0

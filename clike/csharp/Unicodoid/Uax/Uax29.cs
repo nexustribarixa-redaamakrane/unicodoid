@@ -571,13 +571,15 @@ public sealed class Segmenter
     private static bool LbIsExcludedFromLb9(byte cls) =>
         cls is Ucd.Lb.Bk or Ucd.Lb.Cr or Ucd.Lb.Lf or Ucd.Lb.Nl or Ucd.Lb.Sp or Ucd.Lb.Zw;
 
-    private List<LbUnit> LbBuildUnits()
+    private List<LbUnit> LbBuildUnits() => LbBuildUnits(_codePoints);
+
+    private static List<LbUnit> LbBuildUnits(ReadOnlySpan<uint> cps)
     {
-        var units = new List<LbUnit>(_codePoints.Length);
+        var units = new List<LbUnit>(cps.Length);
         int i = 0;
-        while (i < _codePoints.Length)
+        while (i < cps.Length)
         {
-            uint cp = _codePoints[i];
+            uint cp = cps[i];
             byte cls = LbResolveClass(cp);
             byte gc = Ucd.GeneralCategory(cp);
             byte eaw = Ucd.EastAsianWidth(cp);
@@ -605,9 +607,9 @@ public sealed class Segmenter
             {
                 // LB9: treat X (CM | ZWJ)* as X.
                 resolved = cls;
-                while (j < _codePoints.Length)
+                while (j < cps.Length)
                 {
-                    byte c2cls = LbResolveClass(_codePoints[j]);
+                    byte c2cls = LbResolveClass(cps[j]);
                     if (c2cls is not (Ucd.Lb.Cm or Ucd.Lb.Zwj)) break;
                     endsWithZwj = c2cls == Ucd.Lb.Zwj;
                     ++j;
@@ -620,6 +622,27 @@ public sealed class Segmenter
             i = j;
         }
         return units;
+    }
+
+    /// <summary>
+    /// Scalar-level line break boundaries (UAX #14).  The returned indices
+    /// include 0 and <c>cps.Length</c>; a break occurs immediately before
+    /// each listed scalar index.
+    /// </summary>
+    public static int[] LineBoundaries(ReadOnlySpan<uint> cps)
+    {
+        var result = new List<int> { 0 };
+        if (cps.IsEmpty) return result.ToArray();
+
+        List<LbUnit> units = LbBuildUnits(cps);
+        for (int k = 1; k <= units.Count; ++k)
+        {
+            if (LbBreakBefore(units, k))
+            {
+                result.Add(k < units.Count ? units[k].Start : cps.Length);
+            }
+        }
+        return result.ToArray();
     }
 
     /// <summary>True when the units immediately before index k end with NU (SY | IS)*.</summary>
