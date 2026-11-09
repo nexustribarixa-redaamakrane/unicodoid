@@ -29,6 +29,14 @@ DEST = ROOT / "data" / "ucd" / DEFAULT_UNICODE_VERSION
 BASE = f"https://www.unicode.org/Public/{DEFAULT_UNICODE_VERSION}/"
 TR59_URL = "https://www.unicode.org/reports/tr59/east-asian-spacing.txt"
 TR59_REL = "tr59/east-asian-spacing.txt"
+# UTS #37 Ideographic Variation Database is versioned independently of the UCD
+# under https://www.unicode.org/ivd/data/.  Fetch the latest release files.
+IVD_BASE = "https://www.unicode.org/ivd/data/latest/"
+IVD_FILES = [
+    "ivd/IVD_Collections.txt",
+    "ivd/IVD_Sequences.txt",
+    "ivd/IVD_Stats.txt",
+]
 
 FILES = [
     # Core UCD
@@ -107,8 +115,6 @@ FILES = [
     "security/intentional.txt",
     # UTS #46
     "idna/IdnaMappingTable.txt",
-    # UTS #37
-    "ivd/ivd.txt",
     # UTS #58 linkification
     "linkification/LinkBracket.txt",
     "linkification/LinkDetectionTest.txt",
@@ -147,6 +153,23 @@ def fetch_tr59() -> tuple[str, str | None]:
         return TR59_REL, None
     except Exception as exc:  # noqa: BLE001
         return TR59_REL, str(exc)
+
+
+def fetch_ivd(rel: str) -> tuple[str, str | None]:
+    target = DEST / rel
+    if target.exists() and target.stat().st_size > 0:
+        return rel, None
+    name = Path(rel).name
+    url = IVD_BASE + name
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Unicodoid-data/1.0"})
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            payload = resp.read()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(payload)
+        return rel, None
+    except Exception as exc:  # noqa: BLE001
+        return rel, str(exc)
 
 
 def unzip_collation_test() -> str | None:
@@ -205,6 +228,8 @@ def main(argv: list[str] | None = None) -> int:
     with concurrent.futures.ThreadPoolExecutor(max_workers=6) as pool:
         futures = {pool.submit(fetch, rel): rel for rel in FILES}
         futures[pool.submit(fetch_tr59)] = TR59_REL
+        for rel in IVD_FILES:
+            futures[pool.submit(fetch_ivd, rel)] = rel
         for fut in concurrent.futures.as_completed(futures):
             rel, err = fut.result()
             if err:
@@ -220,7 +245,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print("ok   uca/CollationTest.zip extracted")
 
-    all_files = FILES + [TR59_REL]
+    all_files = FILES + [TR59_REL] + IVD_FILES
     manifest = {
         "unicode_version": version,
         "base_url": BASE,
